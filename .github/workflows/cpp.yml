@@ -15,7 +15,16 @@ jobs:
     - name: Setup system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get -y install cppcheck
+        apt_version=`apt show cppcheck 2>/dev/null | grep Version | cut -d' ' -f2`
+        if [ `echo -e "$apt_version\n2.13.0" | sort -V | head -1` == "2.13.0" ]; then
+          sudo apt-get -y install cppcheck
+        else
+          curl -OL https://github.com/danmar/cppcheck/archive/2.13.0.tar.gz
+          tar xf 2.13.0.tar.gz
+          cd cppcheck-2.13.0/
+          sudo make MATCHCOMPILER=yes FILESDIR=/usr/share/cppcheck HAVE_RULES=yes CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function" install
+          cd ..
+        fi
     - name: Run cppcheck
       run: |
         ./misc/travis/cppcheck.sh
